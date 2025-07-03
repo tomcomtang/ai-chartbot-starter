@@ -3,11 +3,12 @@ import React, { useState, useRef, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import ChatHistory from "../components/ChatHistory";
 import ChatInputBar from "../components/ChatInputBar";
+import { fetchAIResponse } from "./aiApi";
 
 export default function Home() {
   const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("gpt-4o");
+  const [selectedModel, setSelectedModel] = useState("deepseek-chat");
   const chatBottomRef = useRef(null);
 
   useEffect(() => {
@@ -16,20 +17,18 @@ export default function Home() {
 
   const handleSend = async (text) => {
     if (!text.trim() || isThinking) return;
-    setMessages([...messages, { role: "user", content: text }]);
+    setMessages((msgs) => [...msgs, { role: "user", content: text }]);
     setIsThinking(true);
-    // Simulate AI response
-    setTimeout(() => {
-      setMessages((msgs) => [
-        ...msgs,
-        {
-          role: "assistant",
-          content: "This is the AI's response.",
-          thinking: `To generate a response to your input, the AI first carefully analyzed the context and intent behind your message. It began by parsing the sentence structure and identifying key entities and actions. Next, it referenced its extensive internal knowledge base to retrieve relevant facts, concepts, and prior examples that could inform its answer. The AI then weighed multiple possible interpretations and considered the nuances of your question, including any implicit assumptions or ambiguities. It simulated several reasoning paths, evaluating the likely outcomes and implications of each. After synthesizing the most pertinent information, the AI constructed a coherent and contextually appropriate response, ensuring clarity and relevance. Finally, it reviewed the generated text for logical consistency and tone, making adjustments as needed to best address your query. This multi-step reasoning process is designed to provide you with a thoughtful, accurate, and helpful answer.`,
-        },
-      ]);
-      setIsThinking(false);
-    }, 1500);
+    const { aiContent, aiReasoning } = await fetchAIResponse(selectedModel, text);
+    setMessages((msgs) => [
+      ...msgs,
+      {
+        role: "assistant",
+        content: aiContent,
+        thinking: aiReasoning,
+      },
+    ]);
+    setIsThinking(false);
   };
 
   // Chat area and input area max width

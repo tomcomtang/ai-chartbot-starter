@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 
 const MODELS = [
   { value: "deepseek-chat", label: "DeepSeek Chat" },
+  { value: "nebius-studio", label: "Nebius Studio" },
 ];
 
 export default function ModelSelector({ value, onChange, borderless }) {
