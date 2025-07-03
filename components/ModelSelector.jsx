@@ -1,0 +1,112 @@
+import React, { useState, useRef, useEffect } from "react";
+
+const MODELS = [
+  { value: "gemini-2-flash", label: "Gemini 2.0 Flash" },
+  { value: "gemini-2-flash-lite", label: "Gemini 2.0 Flash-Lite" },
+  { value: "gemini-2.5-flash-lite-preview", label: "Gemini 2.5 Flash-Lite Preview 06-17" },
+  { value: "gpt-4o", label: "GPT-4o" },
+  { value: "claude-4-sonnet", label: "Claude 4 Sonnet" },
+  { value: "deepseek-v3", label: "DeepSeek-V3" },
+  { value: "grok-3", label: "Grok-3" },
+];
+
+export default function ModelSelector({ value, onChange, borderless }) {
+  const [open, setOpen] = useState(false);
+  const [highlight, setHighlight] = useState(-1);
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+
+  const selected = MODELS.find((m) => m.value === value) || MODELS[0];
+
+  useEffect(() => {
+    if (open && menuRef.current) {
+      menuRef.current.focus();
+    }
+  }, [open]);
+
+  // 关闭下拉菜单（点击外部或失焦）
+  useEffect(() => {
+    function handleClick(e) {
+      if (
+        btnRef.current &&
+        !btnRef.current.contains(e.target) &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+        setHighlight(-1);
+      }
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClick);
+    }
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  // 键盘导航
+  function handleKeyDown(e) {
+    if (!open) return;
+    if (e.key === "ArrowDown") {
+      setHighlight((h) => (h + 1) % MODELS.length);
+      e.preventDefault();
+    } else if (e.key === "ArrowUp") {
+      setHighlight((h) => (h - 1 + MODELS.length) % MODELS.length);
+      e.preventDefault();
+    } else if (e.key === "Enter" && highlight >= 0) {
+      onChange(MODELS[highlight].value);
+      setOpen(false);
+      setHighlight(-1);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+      setHighlight(-1);
+    }
+  }
+
+  return (
+    <div className="relative inline-flex align-middle select-none" tabIndex={-1}>
+      <button
+        ref={btnRef}
+        type="button"
+        className={`flex items-center gap-1 px-2 py-2 rounded bg-transparent text-gray-700 text-base focus:outline-none ${borderless ? '' : 'border bg-gray-50'}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        onKeyDown={handleKeyDown}
+      >
+        <span>{selected.label}</span>
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="none" className="text-gray-400" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 8L10 12L14 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      {open && (
+        <ul
+          ref={menuRef}
+          tabIndex={0}
+          className="absolute left-0 mt-1 min-w-full bg-white border rounded shadow-lg z-20 py-1 outline-none"
+          role="listbox"
+          onKeyDown={handleKeyDown}
+        >
+          {MODELS.map((m, idx) => (
+            <li
+              key={m.value}
+              className={`px-4 py-2 cursor-pointer text-base whitespace-nowrap ${
+                value === m.value ? "bg-blue-100 text-blue-700" :
+                highlight === idx ? "bg-gray-100" : ""
+              }`}
+              role="option"
+              aria-selected={value === m.value}
+              onClick={() => {
+                onChange(m.value);
+                setOpen(false);
+                setHighlight(-1);
+              }}
+              onMouseEnter={() => setHighlight(idx)}
+            >
+              {m.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+} 
