@@ -40,12 +40,11 @@ export default function ChatInputBar({
   return (
     <div className="fixed bottom-0 left-0 w-full bg-transparent border-t-0 z-10 flex justify-center pb-6 pointer-events-none">
       <div
-        className={`w-full max-w-2xl flex flex-col gap-3 bg-white rounded-xl shadow-lg px-6 py-5 pointer-events-auto cursor-text transition-all duration-150 border border-transparent`}
+        className={`w-full max-w-2xl flex flex-col gap-3 bg-white rounded-xl shadow-lg px-6 py-5 pointer-events-auto cursor-text transition-all duration-150 border border-[#e5e7eb]`}
         style={focused ? {
           minHeight: cardHeight,
           marginBottom: '16px',
-          boxShadow: '0 0 0 4px #60a5fa55, 0 0 0 12px #e0e7ef33',
-          border: '1px solid #60a5fa',
+          border: '1.5px solid #d1d5db',
         } : { minHeight: cardHeight, marginBottom: '16px' }}
         onClick={handleCardClick}
       >

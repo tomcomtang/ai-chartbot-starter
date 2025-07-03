@@ -25,7 +25,7 @@ export default function Home() {
         {
           role: "assistant",
           content: "This is the AI's response.",
-          thinking: "AI's reasoning process...",
+          thinking: `To generate a response to your input, the AI first carefully analyzed the context and intent behind your message. It began by parsing the sentence structure and identifying key entities and actions. Next, it referenced its extensive internal knowledge base to retrieve relevant facts, concepts, and prior examples that could inform its answer. The AI then weighed multiple possible interpretations and considered the nuances of your question, including any implicit assumptions or ambiguities. It simulated several reasoning paths, evaluating the likely outcomes and implications of each. After synthesizing the most pertinent information, the AI constructed a coherent and contextually appropriate response, ensuring clarity and relevance. Finally, it reviewed the generated text for logical consistency and tone, making adjustments as needed to best address your query. This multi-step reasoning process is designed to provide you with a thoughtful, accurate, and helpful answer.`,
         },
       ]);
       setIsThinking(false);
