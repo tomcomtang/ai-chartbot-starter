@@ -67,7 +67,7 @@ export default function ChatInputBar({
             <ModelSelector value={selectedModel} onChange={setSelectedModel} borderless />
           </div>
           <button
-            className="ml-2 w-10 h-10 flex items-center justify-center rounded-full bg-blue-500 text-white text-xl disabled:bg-gray-300 disabled:cursor-not-allowed shadow-md transition hover:bg-blue-600 focus:outline-none"
+            className="ml-2 w-10 h-10 flex items-center justify-center rounded-full bg-black text-white text-xl disabled:bg-gray-300 disabled:cursor-not-allowed shadow-md transition hover:bg-black focus:outline-none"
             onClick={handleSend}
             disabled={isThinking || !input.trim()}
             aria-label="Send"
