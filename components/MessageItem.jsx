@@ -1,4 +1,5 @@
 import React, { useState, useRef, useLayoutEffect } from "react";
+import ReactMarkdown from "react-markdown";
 import { FaChevronDown, FaChevronUp, FaUserCircle, FaRobot } from "react-icons/fa";
 
 export default function MessageItem({ message }) {
@@ -63,8 +64,8 @@ export default function MessageItem({ message }) {
             </div>
           )}
           {/* AI 回复内容始终在底部 */}
-          <div className="text-base text-gray-900">
-            {message.content}
+          <div className="prose prose-blue max-w-none text-base text-gray-900">
+            <ReactMarkdown>{message.content}</ReactMarkdown>
           </div>
         </div>
       </div>
@@ -73,10 +74,12 @@ export default function MessageItem({ message }) {
 
   // 用户消息：使用微信风格气泡形状（绿色气泡，右下角带小三角），浅灰背景，深色文字
   return (
-    <div className="flex items-start justify-end mb-2">
-      <div className="relative max-w-[80%]">
-        <div className="bg-[#f3f4f6] text-gray-900 px-4 py-2 rounded-[18px] shadow flex flex-col relative">
-          <div>{message.content}</div>
+    <div className="flex items-center justify-end mb-2">
+      <div className="relative max-w-[80%] flex items-center">
+        <div className="bg-[#f3f4f6] text-gray-900 px-4 py-2 rounded-[18px] shadow flex items-center min-h-[40px]" style={{ lineHeight: '1.7' }}>
+          <div className="user-message-markdown text-base text-gray-900 w-full" style={{ display: 'flex', alignItems: 'center' }}>
+            <ReactMarkdown>{message.content}</ReactMarkdown>
+          </div>
         </div>
         {/* 微信风格右下角三角，SVG与圆角自然衔接 */}
         <svg
@@ -91,7 +94,7 @@ export default function MessageItem({ message }) {
           />
         </svg>
       </div>
-      <div className="flex-shrink-0 ml-2 mt-1">
+      <div className="flex-shrink-0 ml-4">
         <FaUserCircle className="text-2xl" style={{ color: '#555' }} />
       </div>
     </div>

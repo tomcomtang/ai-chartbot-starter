@@ -115,13 +115,12 @@ export default function Home() {
               <div className="fixed left-0 w-full flex justify-center z-30 pointer-events-none" style={{ bottom: `${chatInputHeight + 120}px` }}>
                 <div className="w-full max-w-2xl flex justify-center pointer-events-auto">
                   <button
-                    className="bg-white border border-blue-200 shadow-lg rounded-full p-2 hover:bg-blue-50 transition-colors"
+                    className="scroll-to-bottom-btn rounded-full p-2"
                     onClick={() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })}
                     aria-label="Scroll to bottom"
                   >
                     <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="14" cy="14" r="14" fill="#fff"/>
-                      <path d="M9 12l5 5 5-5" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M9 12l5 5 5-5" stroke="#222" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
                 </div>
