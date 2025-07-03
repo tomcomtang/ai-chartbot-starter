@@ -5,29 +5,71 @@ import ChatHistory from "../components/ChatHistory";
 import ChatInputBar from "../components/ChatInputBar";
 import { fetchAIResponse } from "./aiApi";
 
+// 系统提示词，需与 aiApi.js 保持一致
+const SYSTEM_PROMPT = "请先详细分析用户问题的推理过程，然后再给出最终结论。格式如下：\nReasoning: ...\nAnswer: ...";
+
 export default function Home() {
   const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
   const [selectedModel, setSelectedModel] = useState("deepseek-chat");
   const chatBottomRef = useRef(null);
+  const [showScrollDown, setShowScrollDown] = useState(false);
+  const chatAreaRef = useRef(null);
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // 监听滚动，判断是否在底部
+  useEffect(() => {
+    const chatArea = chatAreaRef.current;
+    if (!chatArea) return;
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = chatArea;
+      // 距离底部小于30px算在底部
+      setShowScrollDown(scrollTop + clientHeight < scrollHeight - 30);
+    };
+    chatArea.addEventListener('scroll', handleScroll);
+    // 初始判断
+    handleScroll();
+    return () => chatArea.removeEventListener('scroll', handleScroll);
+  }, [messages]);
+
   const handleSend = async (text) => {
     if (!text.trim() || isThinking) return;
-    setMessages((msgs) => [...msgs, { role: "user", content: text }]);
+    // 先同步添加用户消息和 loading 消息
+    setMessages((prevMsgs) => [
+      ...prevMsgs,
+      { role: "user", content: text },
+      { role: "assistant", content: "", thinking: "", loading: true }
+    ]);
     setIsThinking(true);
-    const { aiContent, aiReasoning } = await fetchAIResponse(selectedModel, text);
-    setMessages((msgs) => [
-      ...msgs,
-      {
+
+    // 构造完整历史消息（含 system prompt）
+    let messagesForApi;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    // 获取最新的 messages 状态（去掉最后一条 loading）
+    messagesForApi = [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...messages
+        .concat({ role: "user", content: text })
+        .filter((msg) => !msg.loading)
+        .map((msg) => ({ role: msg.role, content: msg.content }))
+    ];
+
+    const { aiContent, aiReasoning } = await fetchAIResponse(selectedModel, text, messagesForApi);
+    // 用真实回复替换最后一条 loading 消息
+    setMessages((prevMsgs) => {
+      const idx = prevMsgs.findIndex((msg) => msg.loading);
+      if (idx === -1) return prevMsgs;
+      const newMsgs = [...prevMsgs];
+      newMsgs[idx] = {
         role: "assistant",
         content: aiContent,
         thinking: aiReasoning,
-      },
-    ]);
+      };
+      return newMsgs;
+    });
     setIsThinking(false);
   };
 
@@ -55,10 +97,11 @@ export default function Home() {
           // Center chat and input area, transparent chat area
           <>
             <div
-              className="w-full flex-1 overflow-y-auto"
+              ref={chatAreaRef}
+              className="w-full flex-1 overflow-y-auto relative"
               style={{
                 maxHeight: `calc(100vh - ${chatInputHeight + 56}px)`,
-                paddingBottom: `${chatInputHeight + 48}px`, // 增大底部留白
+                paddingBottom: `${chatInputHeight + 48}px`,
                 scrollbarGutter: 'stable',
               }}
             >
@@ -67,6 +110,23 @@ export default function Home() {
                 <div ref={chatBottomRef} style={{ scrollMarginBottom: `${chatInputHeight + 48}px` }} />
               </div>
             </div>
+            {/* 向下滚动按钮，渲染在输入框卡片上方 */}
+            {showScrollDown && (
+              <div className="fixed left-0 w-full flex justify-center z-30 pointer-events-none" style={{ bottom: `${chatInputHeight + 120}px` }}>
+                <div className="w-full max-w-2xl flex justify-center pointer-events-auto">
+                  <button
+                    className="bg-white border border-blue-200 shadow-lg rounded-full p-2 hover:bg-blue-50 transition-colors"
+                    onClick={() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                    aria-label="Scroll to bottom"
+                  >
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="14" cy="14" r="14" fill="#fff"/>
+                      <path d="M9 12l5 5 5-5" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
             <ChatInputBar
               onSend={handleSend}
               isThinking={isThinking}

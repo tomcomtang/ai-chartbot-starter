@@ -1,16 +1,9 @@
 // AI API 请求模块
 
-async function fetchDeepseekResponse(text) {
+async function fetchDeepseekResponse(text, messages) {
   let aiContent = "";
   let aiReasoning = "";
   try {
-    // 引导AI输出分析过程和答案
-    const systemPrompt =
-      "请先详细分析用户问题的推理过程，然后再给出最终结论。格式如下：\nReasoning: ...\nAnswer: ...";
-    const messages = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: text },
-    ];
     const res = await fetch("https://api.deepseek.com/chat/completions", {
       method: "POST",
       headers: {
@@ -65,9 +58,9 @@ async function fetchNebiusResponse(text) {
   return { aiContent, aiReasoning };
 }
 
-export async function fetchAIResponse(model, text) {
+export async function fetchAIResponse(model, text, messages) {
   if (model === "deepseek-chat") {
-    return fetchDeepseekResponse(text);
+    return fetchDeepseekResponse(text, messages);
   } else if (model === "nebius-studio") {
     return fetchNebiusResponse(text);
   } else {
