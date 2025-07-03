@@ -1,13 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 
 const MODELS = [
-  { value: "gemini-2-flash", label: "Gemini 2.0 Flash" },
-  { value: "gemini-2-flash-lite", label: "Gemini 2.0 Flash-Lite" },
-  { value: "gemini-2.5-flash-lite-preview", label: "Gemini 2.5 Flash-Lite Preview 06-17" },
-  { value: "gpt-4o", label: "GPT-4o" },
-  { value: "claude-4-sonnet", label: "Claude 4 Sonnet" },
-  { value: "deepseek-v3", label: "DeepSeek-V3" },
-  { value: "grok-3", label: "Grok-3" },
+  { value: "deepseek-chat", label: "DeepSeek Chat" },
 ];
 
 export default function ModelSelector({ value, onChange, borderless }) {
@@ -82,17 +76,18 @@ export default function ModelSelector({ value, onChange, borderless }) {
         <ul
           ref={menuRef}
           tabIndex={0}
-          className="absolute left-0 mt-1 min-w-full bg-white border rounded shadow-lg z-20 py-1 outline-none"
+          className="absolute left-0 bottom-full mb-1 min-w-full bg-white border rounded-xl shadow-lg z-20 py-1 outline-none"
           role="listbox"
           onKeyDown={handleKeyDown}
         >
           {MODELS.map((m, idx) => (
             <li
               key={m.value}
-              className={`px-4 py-2 cursor-pointer text-base whitespace-nowrap ${
-                value === m.value ? "bg-blue-100 text-blue-700" :
-                highlight === idx ? "bg-gray-100" : ""
-              }`}
+              className={`px-4 py-2 cursor-pointer text-base whitespace-nowrap rounded-lg transition-colors
+                ${value === m.value ? "bg-blue-100 text-blue-700" :
+                  highlight === idx ? "bg-blue-50 text-blue-700" :
+                  "hover:bg-blue-50 hover:text-blue-700"}
+              `}
               role="option"
               aria-selected={value === m.value}
               onClick={() => {
