@@ -12,7 +12,7 @@ const SYSTEM_PROMPT = "Please answer user questions in the following format:\n\n
 export default function Home() {
   const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("gemini-flash");
+  const [selectedModel, setSelectedModel] = useState("deepseek-chat");
   const chatBottomRef = useRef(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const chatAreaRef = useRef(null);
@@ -164,6 +164,13 @@ export default function Home() {
         {messages.length === 0 ? (
           // Center input area when no messages
           <div className={`${containerClass} flex-1 flex flex-col justify-center items-center`}>
+            {/* 极简首屏：主标题+描述 */}
+            <div className="flex flex-col items-center justify-center mb-24 select-none">
+              <h1 className="text-5xl font-extrabold text-gray-900 mb-4 tracking-tight drop-shadow-sm text-center">Multi-model AI Chatbot</h1>
+              <p className="text-lg text-gray-500 mb-2 text-center max-w-2xl">
+                Unlock new ways of thinking, creating, and working—AI empowers your ideas and accelerates your journey.
+              </p>
+            </div>
             <ChatInputBar
               onSend={handleSend}
               isThinking={isThinking}

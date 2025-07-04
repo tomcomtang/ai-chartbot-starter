@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 
 const MODELS = [
   { value: "deepseek-chat", label: "DeepSeek Chat" },
-  { value: "nebius-studio", label: "Nebius Studio" },
   { value: "gpt-4o-mini", label: "GPT-4o Mini (OpenAI)" },
+  { value: "nebius-studio", label: "Nebius Studio" },
   { value: "gemini-flash", label: "Gemini 2.0 Flash (Google)" },
 ];
 
