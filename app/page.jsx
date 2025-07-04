@@ -16,6 +16,9 @@ export default function Home() {
   const chatBottomRef = useRef(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const chatAreaRef = useRef(null);
+  // 新增：首屏动画状态
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [welcomeFade, setWelcomeFade] = useState(false); // 控制淡出
 
   // 滚动到底部的函数
   const scrollToBottom = () => {
@@ -92,34 +95,40 @@ export default function Home() {
     });
   }, []);
 
+  // 修改 handleSend，先触发动画再切换视图
   const handleSend = async (text) => {
     if (!text.trim() || isThinking) return;
-    
-    // 先同步添加用户消息和 loading 消息
+    if (messages.length === 0 && showWelcome) {
+      // 首次发送，先淡出首屏
+      setWelcomeFade(true); // 触发 opacity-0
+      setTimeout(() => {
+        setShowWelcome(false); // 真正切换到聊天区
+        actuallySend(text);
+      }, 300); // 动画时长 300ms
+    } else {
+      actuallySend(text);
+    }
+  };
+
+  // 抽离实际发送逻辑
+  const actuallySend = async (text) => {
     setMessages((prevMsgs) => [
       ...prevMsgs,
       { role: "user", content: text },
       { role: "assistant", content: "", thinking: "", loading: true }
     ]);
     setIsThinking(true);
-
-    // 构造完整历史消息（含 system prompt）
     let messagesForApi;
     await new Promise((resolve) => setTimeout(resolve, 0));
-    // 获取最新的 messages 状态（去掉最后一条 loading）
     const chatMessages = messages
       .concat({ role: "user", content: text })
       .filter((msg) => !msg.loading)
       .map((msg) => ({ role: msg.role, content: msg.content }));
-    
-    // 将 SYSTEM_PROMPT 插入到倒数第二条位置
     messagesForApi = [
-      ...chatMessages.slice(0, -1), // 除了最后一条消息外的所有消息
-      { role: "system", content: SYSTEM_PROMPT }, // 倒数第二条：系统提示词
-      chatMessages[chatMessages.length - 1] // 最后一条：用户消息
+      ...chatMessages.slice(0, -1),
+      { role: "system", content: SYSTEM_PROMPT },
+      chatMessages[chatMessages.length - 1]
     ];
-
-    // 统一流式输出处理，无需模型判断
     try {
       await fetchAIStreamResponse(selectedModel, text, messagesForApi, handleStreamChunk);
     } catch (error) {
@@ -139,7 +148,6 @@ export default function Home() {
           content: `AI request failed: ${error?.message || error?.toString() || "Unknown error"}`,
           reasoning: ""
         };
-        // 兜底：移除所有 loading 字段
         return newMsgs.map(msg => {
           if (msg.loading) {
             const { loading, ...rest } = msg;
@@ -160,67 +168,74 @@ export default function Home() {
   return (
     <div className="flex flex-col h-screen">
       <Navbar />
-      <div className={`flex-1 flex flex-col ${messages.length === 0 ? 'items-center justify-center' : 'items-center justify-start'} overflow-hidden`}>
-        {messages.length === 0 ? (
-          // Center input area when no messages
-          <div className={`${containerClass} flex-1 flex flex-col justify-center items-center`}>
-            {/* 极简首屏：主标题+描述 */}
-            <div className="flex flex-col items-center justify-center mb-24 select-none">
-              <h1 className="text-5xl font-extrabold text-gray-900 mb-4 tracking-tight drop-shadow-sm text-center">Multi-model AI Chatbot</h1>
-              <p className="text-lg text-gray-500 mb-2 text-center max-w-2xl">
-                Unlock new ways of thinking, creating, and working—AI empowers your ideas and accelerates your journey.
-              </p>
-            </div>
-            <ChatInputBar
-              onSend={handleSend}
-              isThinking={isThinking}
-              selectedModel={selectedModel}
-              setSelectedModel={setSelectedModel}
-              cardHeight={chatInputHeight}
-            />
-          </div>
-        ) : (
-          // Center chat and input area, transparent chat area
-          <>
-            <div
-              ref={chatAreaRef}
-              className="w-full flex-1 overflow-y-auto relative"
-              style={{
-                maxHeight: `calc(100vh - ${chatInputHeight + 56}px)`,
-                paddingBottom: `${chatInputHeight + 48}px`,
-                scrollbarGutter: 'stable',
-              }}
-            >
-              <div className={containerClass + " px-2"}>
-                <ChatHistory messages={messages} />
-                <div ref={chatBottomRef} style={{ scrollMarginBottom: `${chatInputHeight + 48}px` }} />
+      <div className={`flex-1 flex flex-col overflow-hidden relative`}>
+        {/* 首屏动画包裹 */}
+        {showWelcome && (
+          <div
+            className={`absolute inset-0 z-20 flex flex-col items-center justify-center transition-opacity duration-300 ${welcomeFade ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+          >
+            <div className="w-full max-w-2xl flex-1 flex flex-col justify-center items-center">
+              <div className="flex flex-col items-center justify-center mb-24 select-none">
+                <h1 className="text-5xl font-extrabold text-gray-900 mb-4 tracking-tight drop-shadow-sm text-center">Multi-model AI Chatbot</h1>
+                <p className="text-lg text-gray-500 mb-2 text-center max-w-2xl">
+                  Unlock new ways of thinking, creating, and working—AI empowers your ideas and accelerates your journey.
+                </p>
               </div>
+              <ChatInputBar
+                onSend={handleSend}
+                isThinking={isThinking}
+                selectedModel={selectedModel}
+                setSelectedModel={setSelectedModel}
+                cardHeight={chatInputHeight}
+              />
             </div>
-            {/* 向下滚动按钮，渲染在输入框卡片上方 */}
-            {showScrollDown && (
-              <div className="fixed left-0 w-full flex justify-center z-30 pointer-events-none" style={{ bottom: `${chatInputHeight + 120}px` }}>
-                <div className="w-full max-w-2xl flex justify-center pointer-events-auto">
-                  <button
-                    className="scroll-to-bottom-btn rounded-full p-2"
-                    onClick={() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                    aria-label="Scroll to bottom"
-                  >
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M9 12l5 5 5-5" stroke="#222" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
+          </div>
+        )}
+        {/* 聊天区动画包裹 */}
+        <div
+          className={`flex-1 flex flex-col items-center justify-start transition-opacity duration-300 ${!showWelcome ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        >
+          {(!showWelcome || messages.length > 0) && (
+            <>
+              <div
+                ref={chatAreaRef}
+                className="w-full flex-1 overflow-y-auto relative"
+                style={{
+                  maxHeight: `calc(100vh - ${chatInputHeight + 56}px)`,
+                  paddingBottom: `${chatInputHeight + 48}px`,
+                  scrollbarGutter: 'stable',
+                }}
+              >
+                <div className={containerClass + " px-2"}>
+                  <ChatHistory messages={messages} />
+                  <div ref={chatBottomRef} style={{ scrollMarginBottom: `${chatInputHeight + 48}px` }} />
                 </div>
               </div>
-            )}
-            <ChatInputBar
-              onSend={handleSend}
-              isThinking={isThinking}
-              selectedModel={selectedModel}
-              setSelectedModel={setSelectedModel}
-              cardHeight={chatInputHeight}
-            />
-          </>
-        )}
+              {showScrollDown && (
+                <div className="fixed left-0 w-full flex justify-center z-30 pointer-events-none" style={{ bottom: `${chatInputHeight + 120}px` }}>
+                  <div className="w-full max-w-2xl flex justify-center pointer-events-auto">
+                    <button
+                      className="scroll-to-bottom-btn rounded-full p-2"
+                      onClick={() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                      aria-label="Scroll to bottom"
+                    >
+                      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 12l5 5 5-5" stroke="#222" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              )}
+              <ChatInputBar
+                onSend={handleSend}
+                isThinking={isThinking}
+                selectedModel={selectedModel}
+                setSelectedModel={setSelectedModel}
+                cardHeight={chatInputHeight}
+              />
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
