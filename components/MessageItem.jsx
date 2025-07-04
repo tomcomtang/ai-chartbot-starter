@@ -34,13 +34,13 @@ export default function MessageItem({ message }) {
           {/* 分析过程（如果有的话） */}
           {message.reasoning && (
             <div className="border-l-4 border-gray-400 pl-3 mb-3">
-              <div className="text-sm font-medium text-gray-700 mb-2">
+              <div className="text-sm font-medium text-gray-500 mb-2">
                 {message.reasoning.includes('分析') || message.reasoning.includes('思考') ? '分析过程：' : 'Analysis Process:'}
               </div>
-              <div className="prose prose-sm max-w-none text-gray-600">
+              <div className="prose prose-sm max-w-none text-gray-500">
                 <ReactMarkdown>{message.reasoning}</ReactMarkdown>
                 {message.streaming && (
-                  <span className="inline-block w-2 h-4 bg-gray-600 ml-1 animate-pulse" style={{ animationDuration: '1s' }}></span>
+                  <span className="inline-block w-2 h-4 bg-gray-500 ml-1 animate-pulse" style={{ animationDuration: '1s' }}></span>
                 )}
               </div>
             </div>

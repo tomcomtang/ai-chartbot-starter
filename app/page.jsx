@@ -107,12 +107,16 @@ export default function Home() {
     let messagesForApi;
     await new Promise((resolve) => setTimeout(resolve, 0));
     // 获取最新的 messages 状态（去掉最后一条 loading）
+    const chatMessages = messages
+      .concat({ role: "user", content: text })
+      .filter((msg) => !msg.loading)
+      .map((msg) => ({ role: msg.role, content: msg.content }));
+    
+    // 将 SYSTEM_PROMPT 插入到倒数第二条位置
     messagesForApi = [
-      { role: "system", content: SYSTEM_PROMPT },
-      ...messages
-        .concat({ role: "user", content: text })
-        .filter((msg) => !msg.loading)
-        .map((msg) => ({ role: msg.role, content: msg.content }))
+      ...chatMessages.slice(0, -1), // 除了最后一条消息外的所有消息
+      { role: "system", content: SYSTEM_PROMPT }, // 倒数第二条：系统提示词
+      chatMessages[chatMessages.length - 1] // 最后一条：用户消息
     ];
 
     // DeepSeek 使用流式输出，其他模型使用普通请求
