@@ -18,8 +18,12 @@ async function fetchDeepseekResponse(text, messages) {
     });
     const data = await res.json();
     console.log('DeepSeek response:', data);
-    aiContent = data.choices?.[0]?.message?.content || "[No response]";
-    aiReasoning = "";
+    const fullContent = data.choices?.[0]?.message?.content || "[No response]";
+    
+    // 解析分析过程和回答
+    const { reasoning, content } = parseReasoningAndContent(fullContent);
+    aiContent = content;
+    aiReasoning = reasoning;
   } catch (e) {
     aiContent = "[Error contacting AI service]";
     aiReasoning = e.message || "[Unknown error]";
@@ -67,9 +71,10 @@ async function fetchDeepseekStreamResponse(text, messages, onChunk) {
         if (line.startsWith('data: ')) {
           const data = line.slice(6);
           if (data === '[DONE]') {
-            // 流式输出结束，直接使用完整内容
-            onChunk(aiContent, true);
-            return { aiContent, aiReasoning: "" };
+            // 流式输出结束，解析分析过程和回答
+            const { reasoning, content } = parseReasoningAndContent(aiContent);
+            onChunk(content, reasoning, true);
+            return { aiContent: content, aiReasoning: reasoning };
           }
 
           try {
@@ -81,7 +86,10 @@ async function fetchDeepseekStreamResponse(text, messages, onChunk) {
               aiContent += chunk;
               console.log('DeepSeek stream chunk:', chunk);
               console.log('DeepSeek accumulated content:', aiContent);
-              onChunk(aiContent, false);
+              
+              // 解析当前的分析过程和回答
+              const { reasoning, content } = parseReasoningAndContent(aiContent);
+              onChunk(content, reasoning, false);
             }
           } catch (e) {
             console.warn('Failed to parse chunk:', data, e);
@@ -92,9 +100,27 @@ async function fetchDeepseekStreamResponse(text, messages, onChunk) {
   } catch (e) {
     aiContent = "[Error contacting AI service]";
     console.error(e);
-    onChunk(aiContent, true);
+    onChunk(aiContent, "", true);
   }
   return { aiContent, aiReasoning: "" };
+}
+
+// 解析分析过程和回答的函数
+function parseReasoningAndContent(fullContent) {
+  // 尝试匹配中文格式
+  let reasoningMatch = fullContent.match(/\*\*分析过程：\*\*\s*\n([\s\S]*?)(?=\n\*\*回答：\*\*)/);
+  let contentMatch = fullContent.match(/\*\*回答：\*\*\s*\n([\s\S]*)/);
+  
+  // 如果没有找到中文格式，尝试匹配英文格式
+  if (!reasoningMatch) {
+    reasoningMatch = fullContent.match(/\*\*Analysis Process:\*\*\s*\n([\s\S]*?)(?=\n\*\*Answer:\*\*)/);
+    contentMatch = fullContent.match(/\*\*Answer:\*\*\s*\n([\s\S]*)/);
+  }
+  
+  const reasoning = reasoningMatch ? reasoningMatch[1].trim() : "";
+  const content = contentMatch ? contentMatch[1].trim() : fullContent;
+  
+  return { reasoning, content };
 }
 
 async function fetchNebiusResponse(text) {

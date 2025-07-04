@@ -7,7 +7,7 @@ import ChatInputBar from "../components/ChatInputBar";
 import { fetchAIResponse, fetchAIStreamResponse } from "./aiApi";
 
 // 系统提示词
-const SYSTEM_PROMPT = "请直接回答用户的问题，无需特定格式。";
+const SYSTEM_PROMPT = "Please answer user questions in the following format:\n\n**Analysis Process:**\n[Here, analyze the problem in detail and show your thinking process]\n\n**Answer:**\n[Here, provide the final answer]\n\nNote: If the user asks in Chinese, respond in Chinese. If the user asks in English, respond in English.";
 
 export default function Home() {
   const [messages, setMessages] = useState([]);
@@ -42,8 +42,8 @@ export default function Home() {
   }, [messages]);
 
   // 流式输出回调函数
-  const handleStreamChunk = useCallback((content, isComplete) => {
-    console.log('UI update callback:', { content: content.substring(0, 50) + '...', isComplete });
+  const handleStreamChunk = useCallback((content, reasoning, isComplete) => {
+    console.log('UI update callback:', { content: content.substring(0, 50) + '...', reasoning: reasoning?.substring(0, 50) + '...', isComplete });
     
     // 使用 flushSync 确保立即更新
     flushSync(() => {
@@ -60,7 +60,12 @@ export default function Home() {
         
         if (idx === -1) {
           console.warn('No assistant message found, creating new one');
-          return [...prevMsgs, { role: "assistant", content: content, streaming: !isComplete }];
+          return [...prevMsgs, { 
+            role: "assistant", 
+            content: content, 
+            reasoning: reasoning || "",
+            streaming: !isComplete 
+          }];
         }
         
         const newMsgs = [...prevMsgs];
@@ -69,6 +74,7 @@ export default function Home() {
           newMsgs[idx] = {
             role: "assistant",
             content: content,
+            reasoning: reasoning || "",
           };
           setIsThinking(false);
         } else {
@@ -76,10 +82,11 @@ export default function Home() {
           newMsgs[idx] = {
             role: "assistant",
             content: content,
+            reasoning: reasoning || "",
             streaming: true
           };
         }
-        console.log('Updated message at index:', idx, 'with content length:', content.length, 'isComplete:', isComplete);
+        console.log('Updated message at index:', idx, 'with content length:', content.length, 'reasoning length:', reasoning?.length || 0, 'isComplete:', isComplete);
         return newMsgs;
       });
     });
@@ -116,7 +123,7 @@ export default function Home() {
       } catch (error) {
         console.error('Streaming error:', error);
         // 流式失败，回退到普通请求
-        const { aiContent } = await fetchAIResponse(selectedModel, text, messagesForApi);
+        const { aiContent, aiReasoning } = await fetchAIResponse(selectedModel, text, messagesForApi);
         setMessages((prevMsgs) => {
           const idx = prevMsgs.findIndex((msg) => msg.loading);
           if (idx === -1) return prevMsgs;
@@ -124,6 +131,7 @@ export default function Home() {
           newMsgs[idx] = {
             role: "assistant",
             content: aiContent,
+            reasoning: aiReasoning || "",
           };
           return newMsgs;
         });
@@ -131,7 +139,7 @@ export default function Home() {
       }
     } else {
       // 普通请求处理
-      const { aiContent } = await fetchAIResponse(selectedModel, text, messagesForApi);
+      const { aiContent, aiReasoning } = await fetchAIResponse(selectedModel, text, messagesForApi);
       setMessages((prevMsgs) => {
         const idx = prevMsgs.findIndex((msg) => msg.loading);
         if (idx === -1) return prevMsgs;
@@ -139,6 +147,7 @@ export default function Home() {
         newMsgs[idx] = {
           role: "assistant",
           content: aiContent,
+          reasoning: aiReasoning || "",
         };
         return newMsgs;
       });
