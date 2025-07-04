@@ -4,7 +4,7 @@ import { flushSync } from "react-dom";
 import Navbar from "../components/Navbar";
 import ChatHistory from "../components/ChatHistory";
 import ChatInputBar from "../components/ChatInputBar";
-import { fetchAIResponse, fetchAIStreamResponse } from "./aiApi";
+import { fetchAIStreamResponse } from "./aiApi";
 
 // 系统提示词
 const SYSTEM_PROMPT = "Please answer user questions in the following format:\n\n**Analysis Process:**\n[Here, analyze the problem in detail and show your thinking process]\n\n**Answer:**\n[Here, provide the final answer]\n\nNote: If the user asks in Chinese, respond in Chinese. If the user asks in English, respond in English.";
@@ -12,7 +12,7 @@ const SYSTEM_PROMPT = "Please answer user questions in the following format:\n\n
 export default function Home() {
   const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("deepseek-chat");
+  const [selectedModel, setSelectedModel] = useState("gemini-flash");
   const chatBottomRef = useRef(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const chatAreaRef = useRef(null);
@@ -119,41 +119,34 @@ export default function Home() {
       chatMessages[chatMessages.length - 1] // 最后一条：用户消息
     ];
 
-    // DeepSeek 使用流式输出，其他模型使用普通请求
-    if (selectedModel === "deepseek-chat") {
-      // 流式输出处理
-      try {
-        await fetchAIStreamResponse(selectedModel, text, messagesForApi, handleStreamChunk);
-      } catch (error) {
-        console.error('Streaming error:', error);
-        // 流式失败，回退到普通请求
-        const { aiContent, aiReasoning } = await fetchAIResponse(selectedModel, text, messagesForApi);
-        setMessages((prevMsgs) => {
-          const idx = prevMsgs.findIndex((msg) => msg.loading);
-          if (idx === -1) return prevMsgs;
-          const newMsgs = [...prevMsgs];
-          newMsgs[idx] = {
-            role: "assistant",
-            content: aiContent,
-            reasoning: aiReasoning || "",
-          };
-          return newMsgs;
-        });
-        setIsThinking(false);
-      }
-    } else {
-      // 普通请求处理
-      const { aiContent, aiReasoning } = await fetchAIResponse(selectedModel, text, messagesForApi);
+    // 统一流式输出处理，无需模型判断
+    try {
+      await fetchAIStreamResponse(selectedModel, text, messagesForApi, handleStreamChunk);
+    } catch (error) {
+      console.error('Streaming error:', error);
       setMessages((prevMsgs) => {
         const idx = prevMsgs.findIndex((msg) => msg.loading);
-        if (idx === -1) return prevMsgs;
+        if (idx === -1) return prevMsgs.map(msg => {
+          if (msg.loading) {
+            const { loading, ...rest } = msg;
+            return rest;
+          }
+          return msg;
+        });
         const newMsgs = [...prevMsgs];
         newMsgs[idx] = {
           role: "assistant",
-          content: aiContent,
-          reasoning: aiReasoning || "",
+          content: `AI request failed: ${error?.message || error?.toString() || "Unknown error"}`,
+          reasoning: ""
         };
-        return newMsgs;
+        // 兜底：移除所有 loading 字段
+        return newMsgs.map(msg => {
+          if (msg.loading) {
+            const { loading, ...rest } = msg;
+            return rest;
+          }
+          return msg;
+        });
       });
       setIsThinking(false);
     }

@@ -3,7 +3,8 @@ import React, { useState, useRef, useEffect } from "react";
 const MODELS = [
   { value: "deepseek-chat", label: "DeepSeek Chat" },
   { value: "nebius-studio", label: "Nebius Studio" },
-  { value: "test-model", label: "Test Model" },
+  { value: "gpt-4o-mini", label: "GPT-4o Mini (OpenAI)" },
+  { value: "gemini-flash", label: "Gemini 2.0 Flash (Google)" },
 ];
 
 export default function ModelSelector({ value, onChange, borderless }) {
