@@ -1,12 +1,13 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { flushSync } from "react-dom";
 import Navbar from "../components/Navbar";
 import ChatHistory from "../components/ChatHistory";
 import ChatInputBar from "../components/ChatInputBar";
-import { fetchAIResponse } from "./aiApi";
+import { fetchAIResponse, fetchAIStreamResponse } from "./aiApi";
 
-// 系统提示词，需与 aiApi.js 保持一致
-const SYSTEM_PROMPT = "请先详细分析用户问题的推理过程，然后再给出最终结论。格式如下：\nReasoning: ...\nAnswer: ...";
+// 系统提示词
+const SYSTEM_PROMPT = "请直接回答用户的问题，无需特定格式。";
 
 export default function Home() {
   const [messages, setMessages] = useState([]);
@@ -16,8 +17,13 @@ export default function Home() {
   const [showScrollDown, setShowScrollDown] = useState(false);
   const chatAreaRef = useRef(null);
 
-  useEffect(() => {
+  // 滚动到底部的函数
+  const scrollToBottom = () => {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
   }, [messages]);
 
   // 监听滚动，判断是否在底部
@@ -35,8 +41,53 @@ export default function Home() {
     return () => chatArea.removeEventListener('scroll', handleScroll);
   }, [messages]);
 
+  // 流式输出回调函数
+  const handleStreamChunk = useCallback((content, isComplete) => {
+    console.log('UI update callback:', { content: content.substring(0, 50) + '...', isComplete });
+    
+    // 使用 flushSync 确保立即更新
+    flushSync(() => {
+      setMessages((prevMsgs) => {
+        // 查找最后一条消息，优先查找loading消息，如果没有则查找最后一条assistant消息
+        let idx = prevMsgs.findIndex((msg) => msg.loading);
+        if (idx === -1) {
+          // 如果没有loading消息，查找最后一条assistant消息
+          idx = prevMsgs.length - 1;
+          while (idx >= 0 && prevMsgs[idx].role !== "assistant") {
+            idx--;
+          }
+        }
+        
+        if (idx === -1) {
+          console.warn('No assistant message found, creating new one');
+          return [...prevMsgs, { role: "assistant", content: content, streaming: !isComplete }];
+        }
+        
+        const newMsgs = [...prevMsgs];
+        if (isComplete) {
+          // 流式输出完成，设置最终内容，移除所有特殊标志
+          newMsgs[idx] = {
+            role: "assistant",
+            content: content,
+          };
+          setIsThinking(false);
+        } else {
+          // 流式输出中，更新内容并保持streaming标志
+          newMsgs[idx] = {
+            role: "assistant",
+            content: content,
+            streaming: true
+          };
+        }
+        console.log('Updated message at index:', idx, 'with content length:', content.length, 'isComplete:', isComplete);
+        return newMsgs;
+      });
+    });
+  }, []);
+
   const handleSend = async (text) => {
     if (!text.trim() || isThinking) return;
+    
     // 先同步添加用户消息和 loading 消息
     setMessages((prevMsgs) => [
       ...prevMsgs,
@@ -57,20 +108,42 @@ export default function Home() {
         .map((msg) => ({ role: msg.role, content: msg.content }))
     ];
 
-    const { aiContent, aiReasoning } = await fetchAIResponse(selectedModel, text, messagesForApi);
-    // 用真实回复替换最后一条 loading 消息
-    setMessages((prevMsgs) => {
-      const idx = prevMsgs.findIndex((msg) => msg.loading);
-      if (idx === -1) return prevMsgs;
-      const newMsgs = [...prevMsgs];
-      newMsgs[idx] = {
-        role: "assistant",
-        content: aiContent,
-        thinking: aiReasoning,
-      };
-      return newMsgs;
-    });
-    setIsThinking(false);
+    // DeepSeek 使用流式输出，其他模型使用普通请求
+    if (selectedModel === "deepseek-chat") {
+      // 流式输出处理
+      try {
+        await fetchAIStreamResponse(selectedModel, text, messagesForApi, handleStreamChunk);
+      } catch (error) {
+        console.error('Streaming error:', error);
+        // 流式失败，回退到普通请求
+        const { aiContent } = await fetchAIResponse(selectedModel, text, messagesForApi);
+        setMessages((prevMsgs) => {
+          const idx = prevMsgs.findIndex((msg) => msg.loading);
+          if (idx === -1) return prevMsgs;
+          const newMsgs = [...prevMsgs];
+          newMsgs[idx] = {
+            role: "assistant",
+            content: aiContent,
+          };
+          return newMsgs;
+        });
+        setIsThinking(false);
+      }
+    } else {
+      // 普通请求处理
+      const { aiContent } = await fetchAIResponse(selectedModel, text, messagesForApi);
+      setMessages((prevMsgs) => {
+        const idx = prevMsgs.findIndex((msg) => msg.loading);
+        if (idx === -1) return prevMsgs;
+        const newMsgs = [...prevMsgs];
+        newMsgs[idx] = {
+          role: "assistant",
+          content: aiContent,
+        };
+        return newMsgs;
+      });
+      setIsThinking(false);
+    }
   };
 
   // Chat area and input area max width

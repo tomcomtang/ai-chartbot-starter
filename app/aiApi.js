@@ -18,18 +18,83 @@ async function fetchDeepseekResponse(text, messages) {
     });
     const data = await res.json();
     console.log('DeepSeek response:', data);
-    const content = data.choices?.[0]?.message?.content || "[No response]";
-    // 解析 Reasoning 和 Answer
-    const reasoningMatch = content.match(/Reasoning:(.*?)(?:Answer:|$)/s);
-    const answerMatch = content.match(/Answer:(.*)/s);
-    aiReasoning = reasoningMatch ? reasoningMatch[1].trim() : "";
-    aiContent = answerMatch ? answerMatch[1].trim() : content;
+    aiContent = data.choices?.[0]?.message?.content || "[No response]";
+    aiReasoning = "";
   } catch (e) {
     aiContent = "[Error contacting AI service]";
     aiReasoning = e.message || "[Unknown error]";
     console.error(e);
   }
   return { aiContent, aiReasoning };
+}
+
+async function fetchDeepseekStreamResponse(text, messages, onChunk) {
+  let aiContent = "";
+  let aiReasoning = "";
+  
+  try {
+    const res = await fetch("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer ***REMOVED***85440b9e9dd145e1a200cf188e98f499"
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages,
+        temperature: 0.7,
+        stream: true
+      })
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') {
+            // 流式输出结束，直接使用完整内容
+            onChunk(aiContent, true);
+            return { aiContent, aiReasoning: "" };
+          }
+
+          try {
+            const json = JSON.parse(data);
+            console.log('DeepSeek stream data:', json);
+            
+            const chunk = json.choices?.[0]?.delta?.content || "";
+            if (chunk) {
+              aiContent += chunk;
+              console.log('DeepSeek stream chunk:', chunk);
+              console.log('DeepSeek accumulated content:', aiContent);
+              onChunk(aiContent, false);
+            }
+          } catch (e) {
+            console.warn('Failed to parse chunk:', data, e);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    aiContent = "[Error contacting AI service]";
+    console.error(e);
+    onChunk(aiContent, true);
+  }
+  return { aiContent, aiReasoning: "" };
 }
 
 async function fetchNebiusResponse(text) {
@@ -65,5 +130,20 @@ export async function fetchAIResponse(model, text, messages) {
     return fetchNebiusResponse(text);
   } else {
     return { aiContent: "[Unknown model]", aiReasoning: "[No reasoning]" };
+  }
+}
+
+export async function fetchAIStreamResponse(model, text, messages, onChunk) {
+  if (model === "deepseek-chat") {
+    return fetchDeepseekStreamResponse(text, messages, onChunk);
+  } else if (model === "nebius-studio") {
+    // Nebius 暂不支持流式，回退到普通请求
+    const result = await fetchNebiusResponse(text);
+    onChunk(result.aiContent, true);
+    return result;
+  } else {
+    const result = { aiContent: "[Unknown model]", aiReasoning: "[No reasoning]" };
+    onChunk(result.aiContent, true);
+    return result;
   }
 } 

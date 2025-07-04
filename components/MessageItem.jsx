@@ -1,20 +1,9 @@
-import React, { useState, useRef, useLayoutEffect } from "react";
+import React from "react";
 import ReactMarkdown from "react-markdown";
-import { FaChevronDown, FaChevronUp, FaUserCircle, FaRobot } from "react-icons/fa";
+import { FaUserCircle, FaRobot } from "react-icons/fa";
 
 export default function MessageItem({ message }) {
   const isUser = message.role === "user";
-  const [expanded, setExpanded] = useState(false);
-  const reasoningRef = useRef(null);
-  const [reasoningHeight, setReasoningHeight] = useState(0);
-
-  useLayoutEffect(() => {
-    if (expanded && message.thinking && reasoningRef.current) {
-      setReasoningHeight(reasoningRef.current.scrollHeight);
-    } else {
-      setReasoningHeight(0);
-    }
-  }, [expanded, message.thinking]);
 
   if (!isUser) {
     // AI 消息：AI回复内容在下，分析过程在上，默认收起
@@ -42,30 +31,12 @@ export default function MessageItem({ message }) {
           <FaRobot className="text-2xl" style={{ color: '#555' }} />
         </div>
         <div className="flex flex-col w-full">
-          {/* 展开时显示分析内容（在AI回复内容上方） */}
-          <div
-            className="transition-all duration-300 overflow-hidden mb-1"
-            style={{ maxHeight: reasoningHeight, opacity: expanded && message.thinking ? 1 : 0, willChange: 'max-height, opacity' }}
-          >
-            <div
-              ref={reasoningRef}
-              className="text-sm text-gray-700 whitespace-pre-line"
-              style={{ paddingTop: expanded && message.thinking ? 0 : 0 }}
-            >
-              {message.thinking}
-            </div>
-          </div>
-          {/* 展开/收起按钮，始终紧贴AI回复内容上方 */}
-          {message.thinking && (
-            <div className="flex items-center text-xs text-gray-500 mb-1 cursor-pointer select-none transition-colors hover:text-blue-500" onClick={() => setExpanded((e) => !e)}>
-              {/* 展开时显示向下箭头，收起时显示向上箭头 */}
-              {expanded ? <FaChevronDown className="mr-1" /> : <FaChevronUp className="mr-1" />}
-              <span>{expanded ? "Hide the reasoning process" : "Show the reasoning process"}</span>
-            </div>
-          )}
           {/* AI 回复内容始终在底部 */}
-          <div className="prose prose-blue max-w-none text-base text-gray-900">
+          <div className="prose prose-blue max-w-none text-base text-gray-900 mt-0 [&>*:first-child]:mt-0">
             <ReactMarkdown>{message.content}</ReactMarkdown>
+            {message.streaming && (
+              <span className="inline-block w-2 h-5 bg-gray-900 ml-1 animate-pulse" style={{ animationDuration: '1s' }}></span>
+            )}
           </div>
         </div>
       </div>
