@@ -8,7 +8,7 @@ async function fetchDeepseekStreamResponse(text, messages, onChunk) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer ***REMOVED***85440b9e9dd145e1a200cf188e98f499"
+        "Authorization": `Bearer ${process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY}`
       },
       body: JSON.stringify({
         model: "deepseek-chat",
@@ -97,7 +97,7 @@ async function fetchNebiusStreamResponse(text, messages, onChunk) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer ***REMOVED***OiJIUzI1NiIsImtpZCI6IlV6SXJWd1h0dnprLVRvdzlLZWstc0M1akptWXBvX1VaVkxUZlpnMDRlOFUiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJnaXRodWJ8MjI3ODM5MTIiLCJzY29wZSI6Im9wZW5pZCBvZmZsaW5lX2FjY2VzcyIsImlzcyI6ImFwaV9rZXlfaXNzdWVyIiwiYXVkIjpbImh0dHBzOi8vbmViaXVzLWluZmVyZW5jZS5ldS5hdXRoMC5jb20vYXBpL3YyLyJdLCJleHAiOjE5MDkyMTQwNzUsInV1aWQiOiJlNzM1MzM1YS0zZWI3LTRlMzMtYWJkMi0zYzM4ZWYyZjY2ZjgiLCJuYW1lIjoiY2hhc2V0b255IiwiZXhwaXJlc19hdCI6IjIwMzAtMDctMDJUMDk6MTQ6MzUrMDAwMCJ9.JojSM4YOYO40aCfP9JAR4c9CZSotsoaZR99_h0ECs8Y"
+        "Authorization": `Bearer ${process.env.NEXT_PUBLIC_NEBIUS_API_KEY}`
       },
       body: JSON.stringify({
         // model: "meta-llama/Meta-Llama-3.1-70B-Instruct",
@@ -165,7 +165,7 @@ async function fetchGpt4oMiniStreamResponse(text, messages, onChunk) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer ***REMOVED***proj-JW6RrzrHBB3A5tZNbdRPFrQ-NoGceY_QcgGkxmWmi0kR232hMmwKq9noIq003qzh6Eg76TXcNwT3BlbkFJ5rBmXcGbxy3C34UGaJECSCa5mIrJrjvzGylfghiZvwqEWjEV6IThj2a6s95QSecoF1kukYhLMA"
+        "Authorization": `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY}`
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
@@ -231,7 +231,7 @@ async function fetchGeminiStreamResponse(text, messages, onChunk) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-goog-api-key": "***REMOVED***SyBhoasPY6XwLY09LtvbMrEC1KzuIosRdiI"
+          "X-goog-api-key": process.env.NEXT_PUBLIC_GEMINI_API_KEY
         },
         body: JSON.stringify({
           contents: [
