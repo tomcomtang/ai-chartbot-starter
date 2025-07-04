@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 const MODELS = [
   { value: "deepseek-chat", label: "DeepSeek Chat" },
   { value: "nebius-studio", label: "Nebius Studio" },
+  { value: "test-model", label: "Test Model" },
 ];
 
 export default function ModelSelector({ value, onChange, borderless }) {
@@ -32,10 +33,21 @@ export default function ModelSelector({ value, onChange, borderless }) {
         setHighlight(-1);
       }
     }
+    function handleMouseLeave() {
+      setHighlight(-1);
+    }
     if (open) {
       document.addEventListener("mousedown", handleClick);
+      if (menuRef.current) {
+        menuRef.current.addEventListener("mouseleave", handleMouseLeave);
+      }
     }
-    return () => document.removeEventListener("mousedown", handleClick);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      if (menuRef.current) {
+        menuRef.current.removeEventListener("mouseleave", handleMouseLeave);
+      }
+    };
   }, [open]);
 
   // 键盘导航
@@ -77,17 +89,19 @@ export default function ModelSelector({ value, onChange, borderless }) {
         <ul
           ref={menuRef}
           tabIndex={0}
-          className="absolute left-0 bottom-full mb-1 min-w-full bg-white border rounded-xl shadow-lg z-20 py-1 outline-none"
+          className="absolute left-0 bottom-full mb-1 min-w-full bg-white border rounded-xl shadow-lg z-20 outline-none"
           role="listbox"
           onKeyDown={handleKeyDown}
         >
           {MODELS.map((m, idx) => (
             <li
               key={m.value}
-              className={`px-4 py-2 cursor-pointer text-base whitespace-nowrap rounded-lg transition-colors
-                ${value === m.value ? "bg-blue-100 text-blue-700" :
-                  highlight === idx ? "bg-blue-50 text-blue-700" :
-                  "hover:bg-blue-50 hover:text-blue-700"}
+              className={`px-4 py-2 cursor-pointer text-base whitespace-nowrap transition-colors
+                ${idx === 0 ? 'rounded-t-xl' : ''} 
+                ${idx === MODELS.length - 1 ? 'rounded-b-xl' : ''}
+                ${value === m.value ? "bg-gray-300 text-gray-800" :
+                  highlight === idx ? "bg-gray-200 text-gray-800" :
+                  "hover:bg-gray-200 hover:text-gray-800"}
               `}
               role="option"
               aria-selected={value === m.value}
