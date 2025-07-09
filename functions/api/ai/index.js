@@ -55,15 +55,18 @@ async function proxyDeepSeek(messages, model, env) {
   if (deepseekModel === 'deepseek-chat') {
     requestBody.temperature = 0.7;
   }
-  const res = await PROVIDERS.fetch('https://api.deepseek.com/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(requestBody),
-  });
-  return streamProxy(res);
+
+  return new Response(JSON.stringify({ error: 'Missing model or messages' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+
+  // const res = await PROVIDERS.fetch('https://api.deepseek.com/chat/completions', {
+  //   method: 'POST',
+  //   headers: {
+  //     'Content-Type': 'application/json',
+  //     'Authorization': `Bearer ${apiKey}`,
+  //   },
+  //   body: JSON.stringify(requestBody),
+  // });
+  // return streamProxy(res);
 }
 
 async function proxyOpenAI(messages, env) {
