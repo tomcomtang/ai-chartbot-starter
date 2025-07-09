@@ -56,7 +56,7 @@ async function proxyDeepSeek(messages, model, env) {
     requestBody.temperature = 0.7;
   }
 
-  return new Response(JSON.stringify({ error: 'Missing model or messages' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify({ error: 'Missing model or messages', apiKey }), { status: 400, headers: { 'Content-Type': 'application/json' } });
 
   // const res = await PROVIDERS.fetch('https://api.deepseek.com/chat/completions', {
   //   method: 'POST',
