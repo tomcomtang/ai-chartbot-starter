@@ -164,7 +164,7 @@ export default function Home() {
         const newMsgs = [...prevMsgs];
         newMsgs[idx] = {
           role: "assistant",
-          content: `AI request failed: ${error?.message || error?.toString() || "Unknown error"}`,
+          content: "[Error contacting AI service]",
           reasoning: ""
         };
         return newMsgs.map(msg => {
@@ -176,7 +176,7 @@ export default function Home() {
         });
       });
       setIsThinking(false);
-      showErrorTipMessage(`AI request failed: ${error?.message || error?.toString() || "Unknown error"}`);
+      showErrorTipMessage(error?.message || error?.toString() || "Unknown error");
     }
   };
 
