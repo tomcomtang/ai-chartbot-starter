@@ -228,14 +228,13 @@ async function proxyGemini25FlashLite(messages, env) {
 
 function streamProxy(res) {
   // 直接转发流式响应
-  // return new Response(res.body, {
-  //   status: res.status,
-  //   headers: {
-  //     'Content-Type': res.headers.get('Content-Type') || 'application/octet-stream',
-  //     'Cache-Control': 'no-store',
-  //   },
-  // });
-  return res;
+  return new Response(res.body, {
+    status: res.status,
+    headers: {
+      'Content-Type': res.headers.get('Content-Type') || 'application/octet-stream',
+      'Cache-Control': 'no-store',
+    },
+  });
 }
 
 // 单独的频次检查方法，key为usage:<clientIP>，value为{"date": "YYYY-MM-DD", "count": n}
