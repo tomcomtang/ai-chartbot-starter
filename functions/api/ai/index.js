@@ -56,17 +56,17 @@ async function proxyDeepSeek(messages, model, env) {
     requestBody.temperature = 0.7;
   }
 
-  return new Response(JSON.stringify({ error: 'Missing model or messages', apiKey }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+  // return new Response(JSON.stringify({ error: 'Missing model or messages', apiKey }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
-  // const res = await PROVIDERS.fetch('https://api.deepseek.com/chat/completions', {
-  //   method: 'POST',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //     'Authorization': `Bearer ${apiKey}`,
-  //   },
-  //   body: JSON.stringify(requestBody),
-  // });
-  // return streamProxy(res);
+  const res = await PROVIDERS.fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(requestBody),
+  });
+  return streamProxy(res);
 }
 
 async function proxyOpenAI(messages, env) {
@@ -228,13 +228,14 @@ async function proxyGemini25FlashLite(messages, env) {
 
 function streamProxy(res) {
   // 直接转发流式响应
-  return new Response(res.body, {
-    status: res.status,
-    headers: {
-      'Content-Type': res.headers.get('Content-Type') || 'application/octet-stream',
-      'Cache-Control': 'no-store',
-    },
-  });
+  // return new Response(res.body, {
+  //   status: res.status,
+  //   headers: {
+  //     'Content-Type': res.headers.get('Content-Type') || 'application/octet-stream',
+  //     'Cache-Control': 'no-store',
+  //   },
+  // });
+  return res;
 }
 
 // 单独的频次检查方法，key为usage:<clientIP>，value为{"date": "YYYY-MM-DD", "count": n}

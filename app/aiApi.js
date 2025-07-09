@@ -146,10 +146,10 @@ export async function fetchAIStreamResponse(model, text, messages, onChunk) {
       }
     }
   } catch (e) {
-    aiContent = "[Error contacting AI service]";
     console.error(e);
-    onChunk(aiContent, "", true);
     clearTimeout(timeoutId);
+    // 重新抛出错误，让调用方处理
+    throw e;
   }
   return { aiContent, aiReasoning: "" };
 } 
