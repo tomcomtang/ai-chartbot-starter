@@ -23,7 +23,7 @@ export async function fetchAIStreamResponse(model, text, messages, onChunk) {
   const timeoutId = setTimeout(() => controller.abort(), 600000);
   try {
     // const res = await fetch("http://localhost:8088/api/ai", {
-    const res = await fetch("/api/ai", {
+    const res = await fetch("https://ai-chartbot-starter.edgeone.app/api/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ model, messages }),
