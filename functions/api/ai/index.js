@@ -4,7 +4,7 @@ export async function onRequest({ request, env }) {
     const clientIP = request.eo && request.eo.clientIp ? request.eo.clientIp : 'unknown-ip';
     const allowed = await checkRateLimit(clientIP);
     if (!allowed) {
-      const DAILY_LIMIT = 3;
+      const DAILY_LIMIT = 30;
       return new Response(JSON.stringify({
         error: `Daily usage limit exceeded. You have used up your ${DAILY_LIMIT} daily requests. Please try again tomorrow.`,
         remaining: 0
@@ -253,7 +253,7 @@ async function checkRateLimit(clientIP) {
       usageData = { date: today, count: 0 };
     }
   }
-  const DAILY_LIMIT = 3;
+  const DAILY_LIMIT = 30;
   if (usageData.count >= DAILY_LIMIT) {
     return false;
   } else {
